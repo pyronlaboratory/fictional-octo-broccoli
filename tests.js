@@ -28,6 +28,16 @@ jQuery.getQueryParameters = function(s) {
  * span elements with the given class name.
  */
 jQuery.fn.highlightText = function(text, className) {
+  /**
+   * @description Searches for a specified `text` within a DOM node tree and its
+   * descendants, highlighting the found text by wrapping it in a `span` or `tspan`
+   * element, depending on the context.
+   *
+   * @param {Node} node - Used to traverse the DOM tree.
+   *
+   * @param {object[]} addItems - Used to store objects describing items to be added
+   * to the DOM.
+   */
   function highlight(node, addItems) {
     if (node.nodeType === 3) {
       var val = node.nodeValue;
@@ -64,12 +74,14 @@ jQuery.fn.highlightText = function(text, className) {
     }
     else if (!jQuery(node).is("button, select, textarea")) {
       jQuery.each(node.childNodes, function() {
+        // Iterates over each child node of a given node, highlighting it and adding items.
         highlight(this, addItems);
       });
     }
   }
   var addItems = [];
   var result = this.each(function() {
+    // Executes the highlight function with this context and addItems argument.
     highlight(this, addItems);
   });
   for (var i = 0; i < addItems.length; ++i) {
@@ -107,6 +119,12 @@ if (!jQuery.browser) {
  */
 var Documentation = {
 
+  /**
+   * @description Initializes various components of a search functionality by calling
+   * several methods sequentially, including fixing a Firefox anchor bug, highlighting
+   * search words, initializing an index table, and setting up keyboard navigation
+   * listeners if enabled.
+   */
   init : function() {
     this.fixFirefoxAnchorBug();
     this.highlightSearchWords();
@@ -125,6 +143,18 @@ var Documentation = {
 
   // gettext and ngettext don't access this so that the functions
   // can safely bound to a different name (_ = Documentation.gettext)
+  /**
+   * @description Returns the translation of a given string from a predefined translations
+   * object. If no translation exists, it returns the original string. It handles both
+   * single and multi-part translations by returning either the string or the first
+   * element of an array.
+   *
+   * @param {string | number | (string | number)[]} string - Used to retrieve a translated
+   * version of a given string from the `Documentation.TRANSLATIONS` object.
+   *
+   * @returns {string | string[]} The translated string or the first element of an array
+   * containing the translated strings.
+   */
   gettext : function(string) {
     var translated = Documentation.TRANSLATIONS[string];
     if (typeof translated === 'undefined')
@@ -132,6 +162,24 @@ var Documentation = {
     return (typeof translated === 'string') ? translated : translated[0];
   },
 
+  /**
+   * @description Returns the correct plural form of a given string based on the provided
+   * number `n` and the language's plural rules. It uses a translation array
+   * `Documentation.TRANSLATIONS` to look up the singular form and then applies the
+   * plural expression `Documentation.PLURALEXPR(n)` to determine the correct plural form.
+   *
+   * @param {string | number} singular - The singular parameter is a string representing
+   * the singular form of a word or phrase.
+   *
+   * @param {string} plural - Used as a fallback when no translation is found for the
+   * singular form.
+   *
+   * @param {number} n - Used to determine whether to return the singular or plural
+   * form of a string.
+   *
+   * @returns {string | null} Either the translated singular form, the translated plural
+   * form, or the original singular or plural form if no translation is found.
+   */
   ngettext : function(singular, plural, n) {
     var translated = Documentation.TRANSLATIONS[singular];
     if (typeof translated === 'undefined')
@@ -139,6 +187,15 @@ var Documentation = {
     return translated[Documentation.PLURALEXPR(n)];
   },
 
+  /**
+   * @description Populates the `TRANSLATIONS` object with message keys and their
+   * corresponding translations from the provided `catalog` object, and sets the
+   * `PLURAL_EXPR` to a function evaluating the catalog's plural expression for a given
+   * number.
+   *
+   * @param {object} catalog - Containing translation data, including messages and a
+   * plural expression.
+   */
   addTranslations : function(catalog) {
     for (var key in catalog.messages)
       this.TRANSLATIONS[key] = catalog.messages[key];
@@ -151,12 +208,14 @@ var Documentation = {
    */
   addContextElements : function() {
     $('div[id] > :header:first').each(function() {
+      // Creates a permalink.
       $('<a class="headerlink">\u00B6</a>').
       attr('href', '#' + this.id).
       attr('title', _('Permalink to this headline')).
       appendTo(this);
     });
     $('dt[id]').each(function() {
+      // Creates a permalink.
       $('<a class="headerlink">\u00B6</a>').
       attr('href', '#' + this.id).
       attr('title', _('Permalink to this definition')).
@@ -171,6 +230,7 @@ var Documentation = {
   fixFirefoxAnchorBug : function() {
     if (document.location.hash && $.browser.mozilla)
       window.setTimeout(function() {
+        // Sets a 10-second timer to append an empty string to the current URL.
         document.location.href += '';
       }, 10);
   },
@@ -187,7 +247,9 @@ var Documentation = {
         body = $('body');
       }
       window.setTimeout(function() {
+        // Executes after a 10 millisecond delay.
         $.each(terms, function() {
+          // Iterates over an array of terms.
           body.highlightText(this.toLowerCase(), 'highlighted');
         });
       }, 10);
@@ -202,6 +264,7 @@ var Documentation = {
    */
   initIndexTable : function() {
     var togglers = $('img.toggler').click(function() {
+      // Toggles a table row and updates an image source.
       var src = $(this).attr('src');
       var idnum = $(this).attr('id').substr(7);
       $('tr.cg-' + idnum).toggle();
@@ -237,6 +300,7 @@ var Documentation = {
     var path = document.location.pathname;
     var parts = path.split(/\//);
     $.each(DOCUMENTATION_OPTIONS.URL_ROOT.split(/\//), function() {
+      // Normalizes URL paths by removing '../' references.
       if (this === '..')
         parts.pop();
     });
@@ -244,8 +308,16 @@ var Documentation = {
     return path.substring(url.lastIndexOf('/') + 1, path.length - 1);
   },
 
+  /**
+   * @description Adds keyboard navigation functionality to a webpage. It listens for
+   * left (37) and right (39) arrow key presses and navigates to the previous or next
+   * page if available, based on the presence of 'prev' and 'next' links in the HTML.
+   *
+   * @returns {any} `false` when navigating to a previous or next page, and nothing otherwise.
+   */
   initOnKeyListeners: function() {
     $(document).keydown(function(event) {
+      // Handles keydown events on the document.
       var activeElementType = document.activeElement.tagName;
       // don't navigate when in search box, textarea, dropdown or button
       if (activeElementType !== 'TEXTAREA' && activeElementType !== 'INPUT' && activeElementType !== 'SELECT'
@@ -274,5 +346,6 @@ var Documentation = {
 _ = Documentation.gettext;
 
 $(document).ready(function() {
+  // Self-invokes immediately, executing the code within.
   Documentation.init();
 });
